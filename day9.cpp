@@ -1,18 +1,3 @@
-/*
-    .....    .....    .....
-    .....    ..H..    ..H..
-    ..H.. -> ..... -> ..T..
-    .T...    .T...    .....
-    .....    .....    .....
-
-    .....    .....    .....
-    .....    .....    .....
-    ..H.. -> ...H. -> ..TH.
-    .T...    .T...    .....
-    .....    .....    .....
-
-*/
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -35,33 +20,100 @@ struct Coordinate{ // extract later
     };
 };
 
-void moveTail(Coordinate &tailPos, Coordinate headPos){
-    
+const std::map<char, Coordinate> Directions = {
+    {'L',{-1, 0}},
+    {'R',{1, 0}},
+    {'U',{0, -1}},
+    {'D',{0, 1}}
+};
 
+void moveTail(Coordinate &tailsPos, Coordinate headPos, std::vector<Coordinate>* visitedPositions = nullptr, int* tailsVisitedPos = nullptr){
+    if (abs(headPos.x - tailsPos.x) > 1)
+    {
+        if (headPos.x > tailsPos.x)
+        {
+            tailsPos.x++;
+        }
+        else
+        {
+            tailsPos.x--;
+        }
+        if (headPos.y != tailsPos.y)
+        { // move diagonally
+            if (headPos.y > tailsPos.y)
+            {
+                tailsPos.y++;
+            }
+            else
+            {
+                tailsPos.y--;
+            }
+        }
+    }
+    if (abs(headPos.y - tailsPos.y) > 1)
+    {
+        if (headPos.y > tailsPos.y)
+        {
+            tailsPos.y++;
+        }
+        else
+        {
+            tailsPos.y--;
+        }
+        if (headPos.x != tailsPos.x)
+        { // move diagonally
+            if (headPos.x > tailsPos.x)
+            {
+                tailsPos.x++;
+            }
+            else
+            {
+                tailsPos.x--;
+            }
+        }
+    }
+    if (visitedPositions != nullptr){
+        bool alreadyVisited = false;
+        for (int i = 0; i < visitedPositions->size(); i++)
+        {
+            if (visitedPositions->at(i) == tailsPos)
+            {
+                alreadyVisited = true;
+                break;
+            }
+        }
+        if (!alreadyVisited)
+        {
+            visitedPositions->push_back(tailsPos);
+            (*tailsVisitedPos)++;
+        }
+    }
 }
 
 int main(){
-
-    const std::map<char, Coordinate> Directions = {
-        {'L',{-1, 0}},
-        {'R',{1, 0}},
-        {'U',{0, -1}},
-        {'D',{0, 1}}
+    Coordinate headPos = {1,1};
+    std::vector<Coordinate> tailsPositions = {
+        {1,1}, // 1
+        {1,1},
+        {1,1},
+        {1,1},
+        {1,1},
+        {1,1},
+        {1,1},
+        {1,1},
+        {1,1} // 9
     };
 
-    std::vector<Coordinate> visitedPositions;
-    std::vector<Coordinate> visitedPositionsNewTail;
     int tailsVisitedPos = 1;
-    Coordinate gridDimensions = {1,1};
-    Coordinate headPos = {1,1};
-    Coordinate tailsPos = {1,1};
+    int ninthTailsVisitedPos = 1;
 
+    std::vector<Coordinate> visitedPositions;
+    std::vector<Coordinate> visitedPositionsNinthTail;
     visitedPositions.push_back({1, 1});
-    visitedPositionsNewTail.push_back({1, 1});
+    visitedPositionsNinthTail.push_back({1, 1});
 
     std::ifstream ifs(inputFilePath, std::ifstream::in);
     std::string line;
-    // assuming no negative movement for now
     while(std::getline(ifs, line)){
         // Parse input
         char direction = line[0];
@@ -70,56 +122,24 @@ int main(){
         // Move head
         for(int i = 0; i < amount; i++){
             headPos += Directions.at(direction);
-            // Move tails
-            if (abs(headPos.x - tailsPos.x) > 1){
-                if(headPos.x > tailsPos.x){
-                        tailsPos.x++;
-                    }
+            for(int j=0; j < tailsPositions.size(); j++){
+                // Move tails. For tails 1 and 9 calculate their visited positions (Ex1 and Ex2)
+                if (j == 0){
+                    moveTail(tailsPositions[j], headPos, &visitedPositions, &tailsVisitedPos);
+                }
+                else if (j == 8){
+                    moveTail(tailsPositions[j], tailsPositions[j-1], &visitedPositionsNinthTail, &ninthTailsVisitedPos);
+                }
                 else{
-                    tailsPos.x--;
+                    moveTail(tailsPositions[j], tailsPositions[j-1]);
                 }
-                if(headPos.y != tailsPos.y){ // move diagonally
-                    if(headPos.y > tailsPos.y){
-                        tailsPos.y++;
-                    }
-                     else{
-                        tailsPos.y--;
-                    }
-                }
-            }
-            if (abs(headPos.y - tailsPos.y) > 1){
-                if(headPos.y > tailsPos.y){
-                        tailsPos.y++;
-                    }
-                else{
-                    tailsPos.y--;
-                }
-                if(headPos.x != tailsPos.x){ // move diagonally
-                    if(headPos.x > tailsPos.x){
-                        tailsPos.x++;
-                    }
-                     else{
-                        tailsPos.x--;
-                    }
-                }
-            }
-            bool alreadyVisited = false;
-            for(int i=0; i < visitedPositions.size();i++){
-                if (visitedPositions[i] == tailsPos){
-                    alreadyVisited = true;
-                    break;
-                }
-            }
-            if (!alreadyVisited){
-                visitedPositions.push_back(tailsPos);
-                tailsVisitedPos++;
             }
         }
         
     }
 
     std::cout << "--Ex1 Output: " << tailsVisitedPos << std::endl;
-    std::cout << "--Ex2 Output: " << "" << std::endl;
+    std::cout << "--Ex2 Output: " << ninthTailsVisitedPos << std::endl;
 
     return 0;
 }
