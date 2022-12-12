@@ -14,7 +14,7 @@ enum Operation: int{
 };
 
 struct Monkey{
-    std::deque<int> items;
+    std::deque<uint64_t> items;
 
     Operation op;
     std::string opValue;
@@ -26,13 +26,76 @@ struct Monkey{
     int inspectedItems = 0;
 };
 
-std::vector<Monkey> monkeys;
+uint64_t getModuloOfMonkeyPrimes(uint64_t input){
+    return input % (13 * 19 * 5 * 2 * 17 * 11 * 7 * 3); // * of all the monkey's divisivility factors
+}
 
-int main(){
+uint64_t divideBy3(uint64_t input){
+    return input / 3;
+}
+
+uint64_t getMonkeyBusiness(std::vector<Monkey> monkeys){
+    uint64_t topMonkeyItems1 = std::max(monkeys[0].inspectedItems, monkeys[1].inspectedItems);
+    uint64_t topMonkeyItems2 = std::min(monkeys[0].inspectedItems, monkeys[1].inspectedItems);
+    for(int i =2; i < monkeys.size(); i++){
+        if (monkeys[i].inspectedItems > topMonkeyItems1){
+            topMonkeyItems2 = topMonkeyItems1;
+            topMonkeyItems1 = monkeys[i].inspectedItems;
+        }
+        else if (monkeys[i].inspectedItems > topMonkeyItems2){
+            topMonkeyItems2 = monkeys[i].inspectedItems;
+        }
+    }
+    return topMonkeyItems1*topMonkeyItems2;
+}
+
+void simulateRound(std::vector<Monkey> *monkeys, Monkey *m, uint64_t(*compressInput)(uint64_t))
+{
+    while (!(m->items.empty()))
+    {
+        // Inspect
+        uint64_t inspectingItem = m->items.front();
+        m->items.pop_front();
+        m->inspectedItems++;
+
+        // Worry level operation
+        uint64_t value;
+        if (m->opValue == "old"){
+            value = inspectingItem;
+        }
+        else{
+            value = stoi(m->opValue);
+        }
+        if (m->op == Operation::mult){
+            inspectingItem = inspectingItem * value;
+        }
+        else{ // sum
+            inspectingItem = inspectingItem + value;
+        }
+
+        // Compress
+        inspectingItem = compressInput(inspectingItem);
+
+        // Test divisivility
+        if ((inspectingItem % m->testValue) == 0)
+        {
+            monkeys->at(m->monkeyTestTrue).items.push_back(inspectingItem);
+        }
+        else
+        {
+            monkeys->at(m->monkeyTestFalse).items.push_back(inspectingItem);
+        }
+    }
+}
+
+int main()
+{
     std::ifstream ifs(inputFilePath, std::ifstream::in);
     std::string line;
+    std::vector<Monkey> monkeys;
 
-    while(std::getline(ifs, line)){
+    while (std::getline(ifs, line))
+    {
         // Parse File
         // Monkey #:
         Monkey m;
@@ -40,7 +103,8 @@ int main(){
 
         // Starting items: X, Y
         std::string items = line.substr(18);
-        while(items.find(',') != items.npos){
+        while (items.find(',') != items.npos)
+        {
             int item = stoi(items.substr(0, items.find(',')));
             items = items.substr(items.find(',') + 1);
             m.items.push_back(item);
@@ -49,13 +113,15 @@ int main(){
         std::getline(ifs, line);
 
         // Operation: new = old * sth
-        if (line.find('*') != line.npos){
+        if (line.find('*') != line.npos)
+        {
             m.op = Operation::mult;
-            m.opValue = line.substr(line.find('*')+2);
+            m.opValue = line.substr(line.find('*') + 2);
         }
-        else{ //+
+        else
+        { //+
             m.op = Operation::sum;
-            m.opValue = line.substr(line.find('+')+2);
+            m.opValue = line.substr(line.find('+') + 2);
         }
         std::getline(ifs, line);
 
@@ -72,63 +138,30 @@ int main(){
         monkeys.push_back(m);
         std::getline(ifs, line);
         // Empty line
-
     }
 
-    // Simulate 20 rounds
-    const int ROUNDS = 20;
+     // Simulate Ex 1
+    std::vector<Monkey> monkeysSim1 = monkeys;
+    int ROUNDS = 20;
     for(int round = 0; round < ROUNDS; round++){
-        for(int i=0; i < monkeys.size(); i++){
-            Monkey* m = &monkeys[i];
-            while(!(m->items.empty())){
-                // Inspect
-                int inspectingItem = m->items.front();
-                m->items.pop_front();
-                m->inspectedItems++;
+        for(int i=0; i < monkeysSim1.size(); i++){
+            Monkey *m = &monkeysSim1[i];
+            simulateRound(&monkeysSim1, m, &divideBy3);
+        }
+    } 
 
-                // Worry level operation
-                int value;
-                if (m->opValue == "old"){
-                    value = inspectingItem;
-                }
-                else{
-                    value = stoi(m->opValue);
-                }
-                if (m->op == Operation::mult){
-                    inspectingItem = inspectingItem * value;
-                }
-                else{ // sum
-                    inspectingItem = inspectingItem + value;
-                }
-
-                // Divided by being bored
-                inspectingItem = inspectingItem / 3;
-
-                // Test divisivility
-                if ((inspectingItem % m->testValue) == 0 ){
-                    monkeys[m->monkeyTestTrue].items.push_back(inspectingItem);
-                }
-                else{
-                    monkeys[m->monkeyTestFalse].items.push_back(inspectingItem);
-                }
-            }
+    // Simulate Ex 2
+    std::vector<Monkey> monkeysSim2 = monkeys;
+    ROUNDS = 10000;
+    for(int round = 0; round < ROUNDS; round++){
+        for(int i=0; i < monkeysSim2.size(); i++){
+            Monkey *m = &monkeysSim2[i];
+            simulateRound(&monkeysSim2, m, &getModuloOfMonkeyPrimes);
         }
     }
 
-    // Count monkey bussiness
-    int topMonkeyItems1 = std::max(monkeys[0].inspectedItems, monkeys[1].inspectedItems);
-    int topMonkeyItems2 = std::min(monkeys[0].inspectedItems, monkeys[1].inspectedItems);
-    for(int i =2; i < monkeys.size(); i++){
-        if (monkeys[i].inspectedItems > topMonkeyItems1){
-            topMonkeyItems2 = topMonkeyItems1;
-            topMonkeyItems1 = monkeys[i].inspectedItems;
-        }
-        else if (monkeys[i].inspectedItems > topMonkeyItems2){
-            topMonkeyItems2 = monkeys[i].inspectedItems;
-        }
-    }
-    std::cout << "--Ex1 Output: " << topMonkeyItems1 * topMonkeyItems2 << std::endl;
-    std::cout << "--Ex2 Output: " << "" << std::endl;
+    std::cout << "--Ex1 Output: " << getMonkeyBusiness(monkeysSim1) << std::endl;
+    std::cout << "--Ex2 Output: " << getMonkeyBusiness(monkeysSim2) << std::endl;
 
     return 0;
 }
