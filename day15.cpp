@@ -7,9 +7,7 @@
 
 const std::string inputFilePath = "day15.txt";
 
-
-
-struct Coordinate{ // Extract later
+struct Coordinate{ // Extract later, migrate to class
     int x,y;
     void operator +=(Coordinate other){
         x += other.x;
@@ -22,6 +20,9 @@ struct Coordinate{ // Extract later
     bool operator ==(Coordinate other){
         return ((other.x == x ) && (other.y == y ));
     };
+    bool operator !=(Coordinate other){
+        return ((other.x != x ) || (other.y != y )); // After migrate to class do !(==)
+    };
     Coordinate operator +(Coordinate other){
         Coordinate c = {x+other.x, y+other.y};
         return c;
@@ -32,6 +33,9 @@ struct Coordinate{ // Extract later
     };
     int distance(Coordinate other){
         return std::abs(x - other.x) + std::abs(y - other.y);
+    }
+    bool inRange(Coordinate lowBound, Coordinate highBound){
+        return (x >= lowBound.x) && (y >= lowBound.y) && (x <= highBound.x) && (y <= highBound.y);
     }
 };
 
@@ -51,15 +55,6 @@ bool vectorContainsBeacon(std::vector<Coordinate> beacons, Coordinate beacon){
     return found;
 }
 
-Sensor* isThereASensorWithThisCoodinates(Coordinate coordinates){
-     for(int i=0; i < sensors.size();i++){
-        if (sensors[i].position == coordinates){
-            return &sensors[i];
-        }
-    }
-    return nullptr;
-}
-
 int main(){
     std::ifstream ifs(inputFilePath, std::ifstream::in);
     std::string line;
@@ -71,34 +66,32 @@ int main(){
 
     while(std::getline(ifs, line)){
         Sensor s;
-        int x = std::stoi(line.substr(line.find("x=") + 2, line.find(",")));
-        int y = std::stoi(line.substr(line.find("y=") + 2, line.find(":")));
-        s.position = {x,y};
+        s.position.x = std::stoi(line.substr(line.find("x=") + 2, line.find(",")));
+        s.position.y = std::stoi(line.substr(line.find("y=") + 2, line.find(":")));
 
         Coordinate beaconPos;
         line = line.substr(line.find("beacon"));
         beaconPos.x = std::stoi(line.substr(line.find("x=") + 2, line.find(",")));
         beaconPos.y = std::stoi(line.substr(line.find("y=") + 2));
 
+        s.rangeClosestBeacon = s.position.distance(beaconPos);
+        sensors.push_back(s);
 
         if (!vectorContainsBeacon(beacons, beaconPos)){
             beacons.push_back(beaconPos);
         }
 
-        s.rangeClosestBeacon = s.position.distance(beaconPos);
-        sensors.push_back(s);
-
-        // Set row checking boundaries
-        minX = std::min(x - s.rangeClosestBeacon,beaconPos.x) < minX ? std::min(x + s.rangeClosestBeacon,beaconPos.x) : minX;
-        maxX = std::max(x + s.rangeClosestBeacon,beaconPos.x) > maxX ? std::max(x + s.rangeClosestBeacon,beaconPos.x) : maxX;
+        // Set row checking boundaries for Ex 1
+        minX = std::min(s.position.x - s.rangeClosestBeacon,beaconPos.x) < minX ? std::min(s.position.x + s.rangeClosestBeacon,beaconPos.x) : minX;
+        maxX = std::max(s.position.x + s.rangeClosestBeacon,beaconPos.x) > maxX ? std::max(s.position.x + s.rangeClosestBeacon,beaconPos.x) : maxX;
     }
 
-    // for each x in row, check if within range of any of the sesnsors and if not, count
-    const int rowToCheck = 10;
+    // Ex 1 - for each x in row, check if within range of any of the sesnsors and if not, count
+    const int ROW_TO_CHECK = 2000000;
     int positionsThatCannotContainBeacon = 0;
     for(int x = minX; x <= maxX; x++){
-        if (!vectorContainsBeacon(beacons, {x,rowToCheck})){
-            Coordinate current = {x, rowToCheck};
+        if (!vectorContainsBeacon(beacons, {x,ROW_TO_CHECK})){
+            Coordinate current = {x, ROW_TO_CHECK};
             for(int i=0; i < sensors.size(); i++){
                 if (current.distance(sensors[i].position) <= sensors[i].rangeClosestBeacon){
                     positionsThatCannotContainBeacon++;
@@ -107,47 +100,55 @@ int main(){
             }
         }
     }
-    // Ex 2
-    long tuningFrequency = 0;
-    const int FREQ_RANGE= 4000000;
-    int reduction = 0;
-    for(int y = 0; y <= FREQ_RANGE; y++){
-        bool found = false;
-        for(int x = 0; x <= FREQ_RANGE; x++){
-            Coordinate current = {x, y};
-            const Sensor* sensorInThisCoordinate = isThereASensorWithThisCoodinates(current);
-            if (sensorInThisCoordinate != nullptr){
-                x+= sensorInThisCoordinate->rangeClosestBeacon;
-                //reduction+=sensorInThisCoordinate->rangeClosestBeacon;
-            }
-            else{
+
+    // Ex 2 - Check the borders of every sensor's range (Only place a beacon could be)
+    uint64_t tuningFrequency = 0;
+    const uint64_t FREQ_RANGE= 4000000;
+    bool found = false;
+    for(int i=0; i < sensors.size(); i++){
+        Sensor s = sensors[i];
+        int yOffset = 0;
+        for(int x=s.position.x - s.rangeClosestBeacon - 1; x <= s.position.x + s.rangeClosestBeacon + 1; x++){
+            Coordinate pointToCheck1 = {x, s.position.y + yOffset};
+            Coordinate pointToCheck2 = {x, s.position.y - yOffset};
+            if (pointToCheck1.inRange({0,0},{FREQ_RANGE, FREQ_RANGE})){
                 bool canContainIt = true;
-                for(int i=0; i < sensors.size(); i++){
-                    if (current.distance(sensors[i].position) <= sensors[i].rangeClosestBeacon){
+                for(int j=0; j < sensors.size(); j++){
+                    if (pointToCheck1.distance(sensors[j].position) <= sensors[j].rangeClosestBeacon){
                         canContainIt = false;
-                        int xDistanceToSensor = (sensors[i].position - current).x;
-                        if (xDistanceToSensor>0){
-                            x+=xDistanceToSensor*2;
-                            //reduction+=xDistanceToSensor*2;
-                        }
                         break;
                     }
                 }
-                if(canContainIt){
-                    tuningFrequency = 4000000*x + y;
+                if (canContainIt){
+                    tuningFrequency = (uint64_t)4000000*pointToCheck1.x + pointToCheck1.y;
                     found = true;
                     break;
                 }
             }
-        }
-        if (found){
-            break;
+            if (pointToCheck2.inRange({0,0},{FREQ_RANGE, FREQ_RANGE}) && (pointToCheck2 != pointToCheck1)){ 
+                bool canContainIt = true;
+                for(int j=0; j < sensors.size(); j++){
+                    if (pointToCheck2.distance(sensors[j].position) <= sensors[j].rangeClosestBeacon){
+                        canContainIt = false;
+                        break;
+                    }
+                }
+                if (canContainIt){
+                    tuningFrequency = 4000000*pointToCheck2.x + pointToCheck2.y;
+                    found = true;
+                    break;
+                }
+            }
+            if (x < s.position.x){ // Go up until reaching the sensor origin and then go down, to cover the whole perimteter
+                yOffset++;
+            }
+            else{
+                yOffset--;
+            }
         }
     }
     std::cout << "--Ex1 Output: " << positionsThatCannotContainBeacon << std::endl;
     std::cout << "--Ex2 Output: " << tuningFrequency << std::endl;
-    std::cout << "--Ex2 Reduction: " << reduction << std::endl;
-
 
     return 0;
 }
