@@ -118,14 +118,28 @@ int findMaxFlow(Node* currentNode, int remainingMin, int currentSum, std::vector
     }
 }
 
-int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainingMin1, int remainingMin2, int currentSum, std::vector<bool> openValves, Node* previousNode1 = nullptr, Node* previousNode2 = nullptr){
-    StateE currentState = {numbersForValves.at(currentNode1->name), numbersForValves.at(currentNode2->name), remainingMin1, remainingMin2, currentSum, openValves};
+std::pair<int, int> findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainingMin1, int remainingMin2, int currentSum1, int currentSum2, std::vector<bool> openValves1, std::vector<bool> openValves2, Node* previousNode1 = nullptr, Node* previousNode2 = nullptr){
+/*     StateE currentState = {numbersForValves.at(currentNode1->name), numbersForValves.at(currentNode2->name), remainingMin1, remainingMin2, currentSum, openValves};
     StateE currentStateReversed = {numbersForValves.at(currentNode2->name), numbersForValves.at(currentNode1->name), remainingMin2, remainingMin1, currentSum, openValves};
+ */
+    State currentState1 = {numbersForValves.at(currentNode1->name), remainingMin1, currentSum1, openValves1};
+    State currentState2 = {numbersForValves.at(currentNode2->name), remainingMin2, currentSum2, openValves2};
 
-    if (savedStatesE.find(currentState) != savedStatesE.end()){
-        return savedStatesE.at(currentState);
-    } else if (savedStatesE.find(currentStateReversed) != savedStatesE.end()){
-        return savedStatesE.at(currentStateReversed);
+    bool state1Cached = false;
+    bool state2Cached = false;
+    if(savedStates.find(currentState1) != savedStates.end()){
+        state1Cached = true;
+    }
+    if(savedStates.find(currentState2) != savedStates.end()){
+        state2Cached = true;
+    }
+    if(state1Cached && state2Cached){
+        return {savedStates.at(currentState1), savedStates.at(currentState2)};
+    }
+
+    std::vector<bool> combinedOpenValves = openValves1;
+    for(int i=0; i < openValves2.size(); i++){
+        combinedOpenValves[i] = openValves2[i] ? openValves2[i] : combinedOpenValves[i];
     }
 
     // Get max of 4 possible states. Open + move, move + open, move + move, open + open
@@ -133,13 +147,13 @@ int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainin
     std::map<Node*, int> neighbors2Idx;
 
     int openValve1Sum = 0;
-    if (openValves.at(numbersForValves.at(currentNode1->name)) == 0 && (currentNode1->flowRate > 0) && remainingMin1 > 1){
+    if (!state1Cached && (combinedOpenValves.at(numbersForValves.at(currentNode1->name)) == 0) && (currentNode1->flowRate > 0) && (remainingMin1 > 1)){
         openValve1Sum += currentNode1->flowRate * (remainingMin1 - 1);
         neighbors1Idx.insert({currentNode1, 1});
     }
 
     int openValve2Sum = 0;
-    if (openValves.at(numbersForValves.at(currentNode2->name)) == 0 && (currentNode1->flowRate > 0) && remainingMin2 > 1 && (currentNode2 != currentNode1)){
+    if (!state2Cached && (combinedOpenValves.at(numbersForValves.at(currentNode2->name)) == 0) && (currentNode2->flowRate > 0) && (remainingMin2 > 1) && (currentNode2 != currentNode1)){
         openValve2Sum += currentNode2->flowRate * (remainingMin2 - 1);
         neighbors2Idx.insert({currentNode2, 1});
 
@@ -147,7 +161,7 @@ int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainin
 
 //maybe if theyre the same put some on one and smoe on the other
     std::map<Node*, int>::iterator it;
-    if (openValve1Sum == 0){
+    if (!state1Cached /*&& openValve1Sum == 0*/){
         for (it = currentNode1->neighbors.begin(); it != currentNode1->neighbors.end(); it++)
             {
             if (remainingMin1 > (it->second + 1)){
@@ -157,7 +171,7 @@ int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainin
             }
         }
     }
-    if (openValve2Sum == 0){
+    if (!state2Cached /*&& openValve2Sum == 0*/){
         for (it = currentNode2->neighbors.begin(); it != currentNode2->neighbors.end(); it++)
         {
             if (remainingMin2 > (it->second + 1)){
@@ -168,31 +182,83 @@ int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainin
         }
     }
 
-    int maxCombination = currentSum;
+    std::pair<int, int> maxCombination = {currentSum1, currentSum2};
     std::map<Node*, int>::iterator it1;
     std::map<Node*, int>::iterator it2;
-    for (it1 = neighbors1Idx.begin(); it1 != neighbors1Idx.end(); it1++){
+    if (state1Cached || neighbors1Idx.empty()){
         for (it2 = neighbors2Idx.begin(); it2 != neighbors2Idx.end(); it2++){
-            if (it1->first != it2->first){
-                int sum = currentSum;
-                std::vector<bool> newOpenValves = openValves;
-                if (openValve1Sum > 0 && (it1->first == currentNode1)){
-                    newOpenValves[numbersForValves.at(currentNode1->name)] = 1;
-                    sum += openValve1Sum;
-                }
+            if (currentNode1 != it2->first){
+                int sum2 = currentSum2;
+                std::vector<bool> newOpenValves = openValves2;
                 if (openValve2Sum > 0 && (it2->first == currentNode2)){
                     newOpenValves[numbersForValves.at(currentNode2->name)] = 1;
-                    sum += openValve2Sum;
+                    sum2 += openValve2Sum;
                 }
-                int combination = findMaxFlowWithElephant(it1->first, it2->first, remainingMin1 - it1->second, remainingMin2 - it2->second, sum, newOpenValves, currentNode1, currentNode2);
-                if (combination > maxCombination){
-                    maxCombination = combination;
+                std::pair<int,int> combination = findMaxFlowWithElephant(currentNode1, it2->first, remainingMin1, remainingMin2 - it2->second, currentSum1, sum2, openValves1, newOpenValves, previousNode1, currentNode2);
+                if (combination.first > maxCombination.first){
+                    maxCombination.first = combination.first;
+                }
+                if (combination.second > maxCombination.second){
+                    maxCombination.second = combination.second;
                 }
             }
         }
     }
-    savedStatesE[currentState] = maxCombination;
-    return maxCombination;
+    else if (state2Cached || neighbors2Idx.empty()){
+        for (it1 = neighbors1Idx.begin(); it1 != neighbors1Idx.end(); it1++){
+            if (currentNode2 != it1->first){
+                int sum1 = currentSum1;
+                std::vector<bool> newOpenValves = openValves1;
+                if (openValve1Sum > 0 && (it1->first == currentNode1)){
+                    newOpenValves[numbersForValves.at(currentNode1->name)] = 1;
+                    sum1 += openValve1Sum;
+                }
+                std::pair<int,int> combination = findMaxFlowWithElephant(it1->first, currentNode2, remainingMin1 - it1->second, remainingMin2, sum1, currentSum2, newOpenValves, openValves2, currentNode1, previousNode2);
+                if (combination.first > maxCombination.first){
+                    maxCombination.first = combination.first;
+                }
+                if (combination.second > maxCombination.second){
+                    maxCombination.second = combination.second;
+                }
+            }
+        }
+    }
+    else{
+        for (it1 = neighbors1Idx.begin(); it1 != neighbors1Idx.end(); it1++){
+            for (it2 = neighbors2Idx.begin(); it2 != neighbors2Idx.end(); it2++){
+                if (it1->first != it2->first){
+                    int sum1 = currentSum1;
+                    int sum2 = currentSum2;
+                    std::vector<bool> newOpenValves1 = openValves1;
+                    std::vector<bool> newOpenValves2 = openValves2;
+                    if (openValve1Sum > 0 && (it1->first == currentNode1)){
+                        newOpenValves1[numbersForValves.at(currentNode1->name)] = 1;
+                        sum1 += openValve1Sum;
+                    }
+                    if (openValve2Sum > 0 && (it2->first == currentNode2)){
+                        newOpenValves2[numbersForValves.at(currentNode2->name)] = 1;
+                        sum2 += openValve2Sum;
+                    }
+                    std::pair<int,int> combination = findMaxFlowWithElephant(it1->first, it2->first, remainingMin1 - it1->second, remainingMin2 - it2->second, sum1, sum2, newOpenValves1, newOpenValves2, currentNode1, currentNode2);
+                    if(combination.first + combination.second > maxCombination.first + maxCombination.second){
+                        maxCombination.first = combination.first;
+                        maxCombination.second = combination.second;
+                    }
+                }
+            }
+        }
+    }
+    if (!state1Cached){
+        savedStates[currentState1] = maxCombination.first; // SHOULD I STORE THE SHARED OPEN VALVES?
+    }
+    if (!state2Cached){
+        savedStates[currentState2] = maxCombination.second;
+    }
+    std::pair<int, int> result;
+    result.first = state1Cached ? savedStates.at(currentState1) : maxCombination.first;
+    result.second = state2Cached ? savedStates.at(currentState2) : maxCombination.second;
+
+    return result;
 
 }
 
@@ -293,8 +359,6 @@ int main(){
     const int MAX_MINUTES = 30;
     const int MAX_MINUTES_EX_2 = 26;
 
-
-
     auto t1 = std::chrono::high_resolution_clock::now();
     std::map<Node*, bool> n;
     filterZeroNodes(rootNode, n);
@@ -307,7 +371,8 @@ int main(){
     auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
     std::cout <<  "in " << ms_int.count() << "ms" << std::endl;
     auto t3 = std::chrono::high_resolution_clock::now();
-    std::cout << "--Ex2 Output: " << findMaxFlowWithElephant(rootNode, rootNode, MAX_MINUTES_EX_2, MAX_MINUTES_EX_2, 0, openValves) << std::endl;
+    std::pair ex2Result = findMaxFlowWithElephant(rootNode, rootNode, MAX_MINUTES_EX_2, MAX_MINUTES_EX_2, 0, 0, openValves, openValves);
+    std::cout << "--Ex2 Output: " << ex2Result.first + ex2Result.second << std::endl;
     auto t4 = std::chrono::high_resolution_clock::now();
     ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3);
     std::cout <<  "in " << ms_int.count() << "ms" << std::endl;
