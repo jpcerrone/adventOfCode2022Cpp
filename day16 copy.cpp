@@ -128,6 +128,18 @@ int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainin
         return savedStatesE.at(currentStateReversed);
     }
 
+    std::vector<bool>::iterator itV;
+    bool allVisited = true;
+    for(itV = openValves.begin(); itV != openValves.end(); itV++){
+        if (*itV == false){
+            allVisited = false;
+            break;
+        }
+    }
+    if(allVisited){
+        return currentSum;
+    }
+
     // Get max of 4 possible states. Open + move, move + open, move + move, open + open
     std::map<Node*, int> neighbors1Idx;
     std::map<Node*, int> neighbors2Idx;
@@ -293,8 +305,6 @@ int main(){
     const int MAX_MINUTES = 30;
     const int MAX_MINUTES_EX_2 = 26;
 
-
-
     auto t1 = std::chrono::high_resolution_clock::now();
     std::map<Node*, bool> n;
     filterZeroNodes(rootNode, n);
@@ -307,6 +317,7 @@ int main(){
     auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
     std::cout <<  "in " << ms_int.count() << "ms" << std::endl;
     auto t3 = std::chrono::high_resolution_clock::now();
+    LOG("PUTO");
     std::cout << "--Ex2 Output: " << findMaxFlowWithElephant(rootNode, rootNode, MAX_MINUTES_EX_2, MAX_MINUTES_EX_2, 0, openValves) << std::endl;
     auto t4 = std::chrono::high_resolution_clock::now();
     ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3);
