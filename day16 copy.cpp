@@ -50,32 +50,7 @@ struct State{
   };
 };
 
-struct StateE{ // State with elephants
-    unsigned __int8 node1Idx;
-    unsigned __int8 node2Idx;
-    unsigned __int8 remainingMin1;
-    unsigned __int8 remainingMin2;
-    unsigned __int16 currentSum;
-    std::vector<bool> openValves;
-    bool operator==(const StateE& other) const{
-        return (node1Idx == other.node1Idx) && (node2Idx == other.node2Idx) && (currentSum == other.currentSum) 
-        && (remainingMin1 == other.remainingMin1) 
-        && (remainingMin2 == other.remainingMin2)
-        && (openValves == other.openValves) ;
-    }
-    struct HashFunction
-    {
-        size_t operator()(const StateE& s) const
-        {
-            std::size_t h = 0;
-            hashCombine(h, s.node1Idx, s.node2Idx, s.remainingMin1, s.remainingMin2, s.currentSum, s.openValves);
-            return h;
-        }
-  };
-};
-
 std::unordered_map<State, int, State::HashFunction> savedStates;
-std::unordered_map<StateE, int, StateE::HashFunction> savedStatesE;
 
 const std::string inputFilePath = "day16.txt";
 std::map<std::string, Node*> nodeMap;
@@ -89,7 +64,7 @@ Node* findNode(std::string name, std::set<std::string> visitedNodes = {}){
     }
 }
 
-int findMaxFlow(Node* currentNode, int remainingMin, int currentSum, std::vector<bool> openValves, Node* previousNode = nullptr){
+int findMaxFlow(Node* currentNode, unsigned __int8 remainingMin, unsigned __int16 currentSum, std::vector<bool> &openValves){
     State currentState = {numbersForValves.at(currentNode->name), remainingMin, currentSum, openValves};
     if (savedStates.find(currentState) != savedStates.end()){
         return savedStates.at(currentState);
@@ -111,16 +86,17 @@ int findMaxFlow(Node* currentNode, int remainingMin, int currentSum, std::vector
     if ((currentNode->flowRate != 0) && (openValves.at(numbersForValves.at(currentNode->name)) == 0) && remainingMin > 1){
         openValveSum += currentNode->flowRate * (remainingMin - 1);
         openValves[numbersForValves.at(currentNode->name)] = 1;
-        openValveSum = findMaxFlow(currentNode, remainingMin - 1, openValveSum, openValves, currentNode);
-        //return openValveSum;
+        openValveSum = findMaxFlow(currentNode, remainingMin - 1, openValveSum, openValves);
+        openValves[numbersForValves.at(currentNode->name)] = 0;
+        return openValveSum;
     }
     int neighborMax = currentSum;
     if (remainingMin > 1){
         std::map<Node*, int>::iterator it;
         for (it = currentNode->neighbors.begin(); it != currentNode->neighbors.end(); it++)
         {
-            if((it->first != previousNode) && ((remainingMin - it->second) > 1) && ((it->first->name == "AA")  || !openValves.at(numbersForValves.at(it->first->name)))){ // Avoid loops and opened valves
-                int currentMax = findMaxFlow(it->first, remainingMin - it->second, currentSum, openValves, currentNode);
+            if(((remainingMin - it->second) > 1) && (it->first->name != "AA")  && !openValves.at(numbersForValves.at(it->first->name))){ // Avoid loops and opened valves
+                int currentMax = findMaxFlow(it->first, remainingMin - it->second, currentSum, openValves);
                 if (currentMax > neighborMax)
                 {
                     neighborMax = currentMax;
@@ -136,96 +112,6 @@ int findMaxFlow(Node* currentNode, int remainingMin, int currentSum, std::vector
         savedStates[currentState] = openValveSum;
         return openValveSum;
     }
-}
-
-int findMaxFlowWithElephant(Node* currentNode1, Node* currentNode2, int remainingMin1, int remainingMin2, int currentSum, std::vector<bool> openValves, Node* previousNode1 = nullptr, Node* previousNode2 = nullptr){
-    StateE currentState = {numbersForValves.at(currentNode1->name), numbersForValves.at(currentNode2->name), remainingMin1, remainingMin2, currentSum, openValves};
-    StateE currentStateReversed = {numbersForValves.at(currentNode2->name), numbersForValves.at(currentNode1->name), remainingMin2, remainingMin1, currentSum, openValves};
-
-    if (savedStatesE.find(currentState) != savedStatesE.end()){
-        return savedStatesE.at(currentState);
-    } else if (savedStatesE.find(currentStateReversed) != savedStatesE.end()){
-        return savedStatesE.at(currentStateReversed);
-    }
-
-    std::vector<bool>::iterator itV;
-    bool allVisited = true;
-    for(itV = openValves.begin(); itV != openValves.end(); itV++){
-        if (*itV == false){
-            allVisited = false;
-            break;
-        }
-    }
-    if(allVisited){
-        return currentSum;
-    }
-
-    // Get max of 4 possible states. Open + move, move + open, move + move, open + open
-    std::map<Node*, int> neighbors1Idx;
-    std::map<Node*, int> neighbors2Idx;
-
-    int openValve1Sum = 0;
-    if (openValves.at(numbersForValves.at(currentNode1->name)) == 0 && (currentNode1->flowRate > 0) && remainingMin1 > 1){
-        openValve1Sum += currentNode1->flowRate * (remainingMin1 - 1);
-        neighbors1Idx.insert({currentNode1, 1});
-    }
-
-    int openValve2Sum = 0;
-    if (openValves.at(numbersForValves.at(currentNode2->name)) == 0 && (currentNode1->flowRate > 0) && remainingMin2 > 1 && (currentNode2 != currentNode1)){
-        openValve2Sum += currentNode2->flowRate * (remainingMin2 - 1);
-        neighbors2Idx.insert({currentNode2, 1});
-
-    }
-
-//maybe if theyre the same put some on one and smoe on the other
-    std::map<Node*, int>::iterator it;
-    if (openValve1Sum == 0){
-        for (it = currentNode1->neighbors.begin(); it != currentNode1->neighbors.end(); it++)
-            {
-            if (remainingMin1 > (it->second + 1)){
-                if(it->first != previousNode1){ // Avoid loops
-                    neighbors1Idx.insert({it->first, it->second});
-                }
-            }
-        }
-    }
-    if (openValve2Sum == 0){
-        for (it = currentNode2->neighbors.begin(); it != currentNode2->neighbors.end(); it++)
-        {
-            if (remainingMin2 > (it->second + 1)){
-                if(it->first != previousNode2){ // Avoid loops
-                    neighbors2Idx.insert({it->first, it->second});
-                }
-            }
-        }
-    }
-
-    int maxCombination = currentSum;
-    std::map<Node*, int>::iterator it1;
-    std::map<Node*, int>::iterator it2;
-    for (it1 = neighbors1Idx.begin(); it1 != neighbors1Idx.end(); it1++){
-        for (it2 = neighbors2Idx.begin(); it2 != neighbors2Idx.end(); it2++){
-            if (it1->first != it2->first){
-                int sum = currentSum;
-                std::vector<bool> newOpenValves = openValves;
-                if (openValve1Sum > 0 && (it1->first == currentNode1)){
-                    newOpenValves[numbersForValves.at(currentNode1->name)] = 1;
-                    sum += openValve1Sum;
-                }
-                if (openValve2Sum > 0 && (it2->first == currentNode2)){
-                    newOpenValves[numbersForValves.at(currentNode2->name)] = 1;
-                    sum += openValve2Sum;
-                }
-                int combination = findMaxFlowWithElephant(it1->first, it2->first, remainingMin1 - it1->second, remainingMin2 - it2->second, sum, newOpenValves, currentNode1, currentNode2);
-                if (combination > maxCombination){
-                    maxCombination = combination;
-                }
-            }
-        }
-    }
-    savedStatesE[currentState] = maxCombination;
-    return maxCombination;
-
 }
 
 Node* createNewNode(std::string name){
@@ -251,7 +137,7 @@ Node* createNewNode(std::string name){
                     }
                 }
                 it->first->neighbors.erase(rootNode); // Delete reference to 0 node
-                /* numbersForValves.erase(rootNode->name); */
+                numbersForValves.erase(rootNode->name);
                 nodeMap.erase(rootNode->name);
             }
     }
@@ -282,8 +168,8 @@ int getMaxCombination(std::vector<bool> openValves, int valvesToConsider){
             if (openValves[i]){ nOpenValves++;};
             reverseOpenValves[i] = !openValves[i];
         }
-        LOG(combs++);
-        if (nOpenValves >= 4)
+        //LOG(combs++);
+        if (nOpenValves >= 0)
             return findMaxFlow(rootNode, MAX_MINUTES_EX_2, 0, openValves) + findMaxFlow(rootNode, MAX_MINUTES_EX_2, 0, reverseOpenValves);
         else{
             return 0;
@@ -357,7 +243,7 @@ int main(){
 
             }
             line = line.substr(line.find(',')+2);
-        }
+        }           
         if (findNode(line) != nullptr){
                 currentNode->neighbors.insert({findNode(line), 1});
             } else{
@@ -375,7 +261,7 @@ int main(){
     for(int i=0; i < numbersForValves.size() -1; i++){
         openValves.push_back(false);
     }
-/*      for(std::map<std::string, Node*>::iterator it = nodeMap.begin(); it != nodeMap.end();it++){
+      for(std::map<std::string, Node*>::iterator it = nodeMap.begin(); it != nodeMap.end();it++){
         LOG(it->first);
         for(std::map<std::string, Node*>::iterator it2 = std::next(it, 1); it2 != nodeMap.end();it2++){ 
             if (it->first != it2->first){
@@ -387,14 +273,12 @@ int main(){
                 }
             }
         }
-    } */
-    LOG("GATO");
+    }
     std::cout << "--Ex1 Output: " << findMaxFlow(rootNode, MAX_MINUTES, 0, openValves) << std::endl;
     auto t2 = std::chrono::high_resolution_clock::now();
     auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
     std::cout <<  "in " << ms_int.count() << "ms" << std::endl;
     auto t3 = std::chrono::high_resolution_clock::now();
-
     int maxCombination = getMaxCombination(openValves, openValves.size() -1); // -1 since we dont have to check last bit as all of those combinartions will already have been tested
 
     std::cout << "--Ex2 Output: " << maxCombination << std::endl;
