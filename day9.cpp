@@ -4,21 +4,11 @@
 #include <deque>
 #include <map>
 #include <vector>
+#include "utils/coordinate.h"
 
 #define LOG(x) std::cout << x << std::endl;
 
 const std::string inputFilePath = "day9.txt";
-
-struct Coordinate{ // extract later
-    int x,y;
-    void operator +=(Coordinate other){
-        x += other.x;
-        y += other.y;
-    };
-    bool operator ==(Coordinate other){
-        return ((other.x == x ) && (other.y == y ));
-    };
-};
 
 const std::map<char, Coordinate> Directions = {
     {'L',{-1, 0}},

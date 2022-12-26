@@ -4,20 +4,7 @@
 #include <vector>
 #include <queue>
 
-struct Coordinate{ // Extract later
-    int x,y;
-    void operator +=(Coordinate other){
-        x += other.x;
-        y += other.y;
-    };
-    bool operator ==(Coordinate other){
-        return ((other.x == x ) && (other.y == y ));
-    };
-    Coordinate operator +(Coordinate other){
-        Coordinate c = {x+other.x, y+other.y};
-        return c;
-    };
-};
+#include "utils/coordinate.h"
 
 #define LOG(x) std::cout << x << std::endl;
 

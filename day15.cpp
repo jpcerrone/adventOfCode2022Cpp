@@ -2,42 +2,11 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "utils/coordinate.h"
 
 #define LOG(x) std::cout << x << std::endl;
 
 const std::string inputFilePath = "day15.txt";
-
-struct Coordinate{ // Extract later, migrate to class
-    int x,y;
-    void operator +=(Coordinate other){
-        x += other.x;
-        y += other.y;
-    };
-    void operator -=(Coordinate other){
-        x -= other.x;
-        y -= other.y;
-    };
-    bool operator ==(Coordinate other){
-        return ((other.x == x ) && (other.y == y ));
-    };
-    bool operator !=(Coordinate other){
-        return ((other.x != x ) || (other.y != y )); // After migrate to class do !(==)
-    };
-    Coordinate operator +(Coordinate other){
-        Coordinate c = {x+other.x, y+other.y};
-        return c;
-    };
-    Coordinate operator -(Coordinate other){
-        Coordinate c = {x-other.x, y-other.y};
-        return c;
-    };
-    int distance(Coordinate other){
-        return std::abs(x - other.x) + std::abs(y - other.y);
-    }
-    bool inRange(Coordinate lowBound, Coordinate highBound){
-        return (x >= lowBound.x) && (y >= lowBound.y) && (x <= highBound.x) && (y <= highBound.y);
-    }
-};
 
 struct Sensor{
     Coordinate position;

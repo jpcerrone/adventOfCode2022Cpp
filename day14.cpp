@@ -3,6 +3,7 @@
 #include <string>
 #include <array>
 #include <algorithm>
+#include "utils/coordinate.h"
 
 #define LOG(x) std::cout << x << std::endl;
 
@@ -10,21 +11,6 @@ const std::string inputFilePath = "day14.txt";
 
 const int ARRAY_SIZE = 1000; // Try changing for 600 later
 std::array<std::array<char, ARRAY_SIZE>, ARRAY_SIZE> grid;
-
-struct Coordinate{ // Extract later
-    int x,y;
-    void operator +=(Coordinate other){
-        x += other.x;
-        y += other.y;
-    };
-    bool operator ==(Coordinate other){
-        return ((other.x == x ) && (other.y == y ));
-    };
-    Coordinate operator +(Coordinate other){
-        Coordinate c = {x+other.x, y+other.y};
-        return c;
-    };
-};
 
 const Coordinate SAND_ORIGIN = {500,0};
 
