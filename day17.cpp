@@ -2,10 +2,14 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
+#include <map>
 #include "utils/coordinate.h"
 
 #define LOG(x) std::cout << x << std::endl;
 #define Matrix std::vector<std::vector<bool>>
+
+const uint64_t EX2_ROCKS = 1000000000000;
 
 Matrix grid; // A stack of rows, starting from the bottom
 const int GRID_WIDTH = 7;
@@ -36,6 +40,23 @@ std::vector<Matrix> pieces = {
 };
 
 
+struct State{
+    int pieceIdx;
+    int inputIdx;
+    std::vector<int> heights;
+    bool operator<(const State& other) const{
+        return (pieceIdx < other.pieceIdx) || 
+        (pieceIdx == other.pieceIdx && inputIdx < other.inputIdx) || 
+        (pieceIdx == other.pieceIdx && inputIdx == other.inputIdx && heights < other.heights);
+    }
+};
+
+struct StateValue{
+    int height;
+    int fallenPieces;
+};
+
+std::map<State, StateValue> states;
 
 const std::string inputFilePath = "day17.txt";
 
@@ -108,6 +129,7 @@ void placePiece(Matrix* currentPiece, Coordinate position){
     }
 }
 
+// For debugging purposes only
 void printGrid(Matrix* currentPiece, Coordinate position){
     for(int y = 30; y >= 0; y--){
         for (int x = 0; x < GRID_WIDTH ; x++){
@@ -124,40 +146,36 @@ void printGrid(Matrix* currentPiece, Coordinate position){
 }
 
 int main(){
-    Coordinate currentPiecePos = {2, 4}; //Starting from the bottom left
-
+    // Construct grid with 10K rows
     std::vector<bool> floor = {1,1,1,1,1,1,1};
-    LOG(sizeof(floor));
-    grid.push_back(floor); // Floor
-
+    grid.push_back(floor);
     for(int i=0; i< 20000; i++){
         grid.push_back({0,0,0,0,0,0,0});
     }
-    long rocksThatStopped = 0;
-    long yForHighestRockInRoom = 0;
 
-    // Test
-    # if 0
-    Coordinate piece2C = {3,1};
-    Matrix piece2 = pieces[2];
-    placePiece(&pieces[1],{1,1});
-    printGrid(&piece2, piece2C);
-    LOG(canPieceMoveLeft(&piece2, piece2C));
-    LOG(canPieceMoveRight(&piece2, piece2C));
-    LOG(canPieceMoveDown(&piece2, piece2C));
+    Coordinate currentPiecePos = {2, 4}; // Starting from the bottom left
+    uint64_t rocksThatStopped = 0;
+    uint64_t yForHighestRockInRoom = 0;
+    uint64_t heightSurpluss;
+    bool cycleFound = false;
+    int heightForEx1;
 
-    # endif
+    // Get input and iterator
     std::ifstream ifs(inputFilePath, std::ifstream::in);
     std::string input;
     std::getline(ifs, input);
-    LOG(input.size());
     std::string::iterator it = input.begin(); // Hack to not perform i++ on the first iteration
-    while(rocksThatStopped < 2022){ 
+
+    while(rocksThatStopped < EX2_ROCKS){ 
+        if (rocksThatStopped == 2022){
+            heightForEx1 = yForHighestRockInRoom;
+        }
         if (it==input.end()){ // Repeat input if it has been fully consumed
             it = input.begin();
         }
         Matrix* currentPiece = &pieces[rocksThatStopped % NUMBER_OF_PIECES];
-        //printGrid(currentPiece, currentPiecePos);
+
+        // Move left/right and then down
         if ((*it == '<') && canPieceMoveLeft(currentPiece, currentPiecePos)){
             currentPiecePos.x -= 1;
         }
@@ -168,15 +186,46 @@ int main(){
             currentPiecePos.y -= 1;
         }else{
             placePiece(currentPiece, currentPiecePos);
-            yForHighestRockInRoom = std::max(yForHighestRockInRoom, (long)(currentPiecePos.y + currentPiece->size() -1));
+            yForHighestRockInRoom = std::max(yForHighestRockInRoom, (uint64_t)(currentPiecePos.y + currentPiece->size() -1));
             rocksThatStopped += 1;
             currentPiecePos = {2, yForHighestRockInRoom + 4};
+
+            if(!cycleFound){
+                // Calculate State
+                std::vector<int> heights;
+                for(int x=0; x < GRID_WIDTH; x++){
+                    int differenceWithHighest = 0;
+                    for(int y=yForHighestRockInRoom; y >= 0; y--){
+                        if (grid[y][x]){
+                            heights.push_back(differenceWithHighest);
+                            break;
+                        }else{
+                            differenceWithHighest++;
+                        }
+                    }
+                }
+                State s = {rocksThatStopped % NUMBER_OF_PIECES, std::distance(it, input.begin()), heights};
+                StateValue sv = {yForHighestRockInRoom, rocksThatStopped};
+                if (states.find(s) != states.end())
+                {
+                    int diffPieces = rocksThatStopped - states.at(s).fallenPieces;
+                    int diffHeight = yForHighestRockInRoom - states.at(s).height;
+                    uint64_t remainingRocks = EX2_ROCKS - rocksThatStopped;
+                    uint64_t cyclesToProcess = remainingRocks / diffPieces;
+                    rocksThatStopped += cyclesToProcess * diffPieces;
+                    heightSurpluss = (cyclesToProcess)*diffHeight;
+                    cycleFound = true;
+                } else
+                {
+                    states.insert({s, sv});
+                }
+            }
         }
         it++;
     }
 
-    std::cout << "--Ex1 Output: " << yForHighestRockInRoom << std::endl;
-    std::cout << "--Ex2 Output: " << "" << std::endl;
+    std::cout << "--Ex1 Output: " << heightForEx1 << std::endl;
+    std::cout << "--Ex2 Output: " << yForHighestRockInRoom + heightSurpluss << std::endl;
 
     return 0;
 }
