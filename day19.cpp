@@ -15,7 +15,6 @@ inline void hashCombine(std::size_t &seed, T const &v, Rest &&... rest) {
 
 const std::string inputFilePath = "day19.txt";
 
-
 struct RobotCost{
     int ore = 0;
     int clay = 0;
@@ -155,12 +154,9 @@ int main(){
         }
         currentBluePrint = {oreRobot, clayRobot, obisidanRobot, geodeRobot};
         int maxCombination = findMaxCombination(23 ,0,0,0,0,{1});
-        int maxCombinationMoreSteps = findMaxCombination(31 ,0,0,0,0,{1});
         if (bluePrintId <= 3)
-            multFirst3BluePrints *= maxCombinationMoreSteps;
-        LOG(maxCombination);
+            multFirst3BluePrints *= findMaxCombination(31 ,0,0,0,0,{1});
         states.clear();
-        //LOG("erased");
         qualityLevels = qualityLevels + bluePrintId*maxCombination;
         bluePrintId++;
     }
