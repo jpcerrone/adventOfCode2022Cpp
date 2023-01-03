@@ -17,7 +17,7 @@ move 1 from 1 to 2
 #include <vector>
 #include <string>
 
-const std::string inputFilePath = "day5.txt";
+const std::string inputFilePath = "inputs/day5.txt";
 const int CRATE_CHAR_LENGTH = 3;
 
 void moveCrateBetweenStacks(std::deque<char> &from, std::deque<char> &to){

@@ -16,7 +16,7 @@
     C Z 
 */
 
-const std::string inputFilePath = "day2.txt";
+const std::string inputFilePath = "inputs/day2.txt";
 
 const int WIN_POINTS = 6;
 const int DRAW_POINTS = 3;

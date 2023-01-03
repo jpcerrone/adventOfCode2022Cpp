@@ -13,7 +13,7 @@ CrZsJsPPZsGzwwsLwLmpwMDw */
 #include <set>
 #include <assert.h>
 
-const std::string inputFilePath = "day3.txt";
+const std::string inputFilePath = "inputs/day3.txt";
 
 // Calculates the type's value using the ASCII value from its char and the offset for it
 int getTypePriority(char type){

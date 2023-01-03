@@ -9,7 +9,7 @@
 
 Matrix3D grid;
 
-const std::string inputFilePath = "day18.txt";
+const std::string inputFilePath = "inputs/day18.txt";
 
 int getSurfaceAreaOfBlock(bool &inBlock, int x, int y, int z){
     if (!inBlock)

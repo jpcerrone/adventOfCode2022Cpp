@@ -6,7 +6,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day15.txt";
+const std::string inputFilePath = "inputs/day15.txt";
 
 struct Sensor{
     Coordinate position;

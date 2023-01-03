@@ -8,7 +8,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day9.txt";
+const std::string inputFilePath = "inputs/day9.txt";
 
 const std::map<char, Coordinate> Directions = {
     {'L',{-1, 0}},

@@ -13,7 +13,7 @@ inline void hashCombine(std::size_t &seed, T const &v, Rest &&... rest) {
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day19.txt";
+const std::string inputFilePath = "inputs/day19.txt";
 
 struct RobotCost{
     int ore = 0;

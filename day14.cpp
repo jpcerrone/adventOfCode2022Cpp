@@ -7,7 +7,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day14.txt";
+const std::string inputFilePath = "inputs/day14.txt";
 
 const int ARRAY_SIZE = 1000; // Try changing for 600 later
 std::array<std::array<char, ARRAY_SIZE>, ARRAY_SIZE> grid;

@@ -4,7 +4,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "dayX.txt";
+const std::string inputFilePath = "inputs/dayX.txt";
 
 int main(){
     std::ifstream ifs(inputFilePath, std::ifstream::in);

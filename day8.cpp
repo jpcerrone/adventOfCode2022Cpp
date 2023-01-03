@@ -5,7 +5,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day8.txt";
+const std::string inputFilePath = "inputs/day8.txt";
 
 std::vector<std::vector<int>> treeGrid; // Assuming square input
 std::vector<std::vector<int>> visibleTreeGrid; // Assuming square input.

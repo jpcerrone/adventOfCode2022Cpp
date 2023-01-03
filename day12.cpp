@@ -8,7 +8,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day12.txt";
+const std::string inputFilePath = "inputs/day12.txt";
 
 std::vector<std::vector<char>> heightMap;
 std::vector<std::vector<bool>> visitedMap;

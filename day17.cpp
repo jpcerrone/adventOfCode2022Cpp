@@ -58,7 +58,7 @@ struct StateValue{
 
 std::map<State, StateValue> states;
 
-const std::string inputFilePath = "day17.txt";
+const std::string inputFilePath = "inputs/day17.txt";
 
 bool canPieceMoveDown(Matrix* currentPiece, Coordinate position){
     const std::vector<bool> pieceLastRow = currentPiece->at(0);

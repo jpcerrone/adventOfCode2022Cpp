@@ -5,7 +5,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day13.txt";
+const std::string inputFilePath = "inputs/day13.txt";
 
 bool isCharNumber(char c){
     return ((c >= 48) && ( c <= 57));

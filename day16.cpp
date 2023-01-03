@@ -52,7 +52,7 @@ struct State{
 
 std::unordered_map<State, int, State::HashFunction> savedStates;
 
-const std::string inputFilePath = "day16.txt";
+const std::string inputFilePath = "inputs/day16.txt";
 std::map<std::string, Node*> nodeMap;
 
 Node* findNode(std::string name, std::set<std::string> visitedNodes = {}){

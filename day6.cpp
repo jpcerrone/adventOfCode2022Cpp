@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-const std::string inputFilePath = "day6.txt";
+const std::string inputFilePath = "inputs/day6.txt";
 
 bool doesStringHaveUniqueChars(std::string str){
     for(int i=0; i < str.length();i++){

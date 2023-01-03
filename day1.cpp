@@ -4,7 +4,7 @@
 #include <array>
 
 std::string::size_type sz;   // Size of input ints. alias of size_t (unisgned int)
-const std::string inputPath = "input1.txt";
+const std::string inputPath = "inputs/input1.txt";
 int main(){
 
     // Ex1

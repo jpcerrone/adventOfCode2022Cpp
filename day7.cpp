@@ -9,7 +9,7 @@ const int SIZE_LIMIT = 100000;
 const int DISK_SPACE = 70000000;
 const int UPDATE_SIZE = 30000000;
 
-const std::string inputFilePath = "day7.txt";
+const std::string inputFilePath = "inputs/day7.txt";
 
 struct File{
     std::string name;

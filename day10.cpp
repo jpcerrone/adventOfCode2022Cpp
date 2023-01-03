@@ -6,7 +6,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day10.txt";
+const std::string inputFilePath = "inputs/day10.txt";
 
 const std::vector<int> cyclesToCheck = {20, 60, 100, 140, 180, 220};
 

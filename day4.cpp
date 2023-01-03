@@ -13,7 +13,7 @@
 #include <fstream>
 #include <string>
 
-const std::string inputFilePath = "day4.txt";
+const std::string inputFilePath = "inputs/day4.txt";
 
 bool isPairContainedWithinOtherPair(std::pair<int, int> p1, std::pair<int, int> p2){
     return ((p1.first >= p2.first) && (p1.second <= p2.second));

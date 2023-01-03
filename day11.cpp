@@ -6,7 +6,7 @@
 
 #define LOG(x) std::cout << x << std::endl;
 
-const std::string inputFilePath = "day11.txt";
+const std::string inputFilePath = "inputs/day11.txt";
 
 enum Operation: int{
     mult,
